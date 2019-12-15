@@ -486,7 +486,7 @@ lb = Chr(10)
     temp_line = ""
     For a = 1 To DataStructure.ScaleInclude
         If InputForm_CFA.LV4 = True Then
-            temp_ind = DataStructure.ScaleName(a, True)
+            temp_ind = format_mplus(DataStructure.ScaleName(a, True))
             If Len(temp_line) + Len(temp_ind) > 88 Then
                 usevariables = usevariables & temp_line & lb
                 temp_line = temp_ind
@@ -496,7 +496,7 @@ lb = Chr(10)
             End If
         Else
             For b = 1 To DataStructure.ScaleIndicator(a, 0, True)
-                temp_ind = DataStructure.ScaleIndicator(a, b, True)
+                temp_ind = format_mplus(DataStructure.ScaleIndicator(a, b, True))
                 If Len(temp_line) + Len(temp_ind) > 88 Then
                     usevariables = usevariables & temp_line & lb
                     temp_line = temp_ind
@@ -521,7 +521,7 @@ lb = Chr(10)
             n_ind_line = 0
             For b = 1 To DataStructure.ScaleIndicator(a, 0, True)
                 n_ind_line = n_ind_line + 1
-                temp_ind = DataStructure.ScaleIndicator(a, b, True)
+                temp_ind = format_mplus(DataStructure.ScaleIndicator(a, b, True))
                 If InputForm_CFA.LV2 = True And b = 1 Then
                     temp_ind = temp_ind & "*"
                 ElseIf InputForm_CFA.LV3 = True And DataStructure.ScaleIndicator(a, 0, True) > 1 Then
@@ -568,7 +568,7 @@ lb = Chr(10)
             For a = 1 To DataStructure.ScaleInclude
                 n_ind = DataStructure.ScaleIndicator(a, 0, True)
                 If n_ind > 1 Then
-                    model_syntax = model_syntax & "[" & DataStructure.ScaleIndicator(a, 1, True) & "-" & DataStructure.ScaleIndicator(a, n_ind, True) & "*0] (N" & int_num + 1 & "-N" & int_num + n_ind & ");" & lb
+                    model_syntax = model_syntax & "[" & format_mplus(DataStructure.ScaleIndicator(a, 1, True)) & "-" & format_mplus(DataStructure.ScaleIndicator(a, n_ind, True)) & "*0] (N" & int_num + 1 & "-N" & int_num + n_ind & ");" & lb
                     int_num = int_num + n_ind
                 End If
             Next
@@ -579,9 +579,9 @@ lb = Chr(10)
         If InputForm_CFA.LV3 = True Then
             ind_num = 0
             For a = 1 To DataStructure.ScaleInclude
-                model_constraint = model_constraint & "0="
                 n_ind = DataStructure.ScaleIndicator(a, 0, True)
                 If n_ind > 1 Then
+                    model_constraint = model_constraint & "0="
                     For b = 1 To n_ind
                         ind_num = ind_num + 1
                         If b > 1 Then model_constraint = model_constraint & "+"
@@ -596,16 +596,16 @@ lb = Chr(10)
         If InputForm_CFA.LV3b = True Then
             int_num = 0
             For a = 1 To DataStructure.ScaleInclude
-                model_constraint = model_constraint & "0="
                 n_ind = DataStructure.ScaleIndicator(a, 0, True)
                 If n_ind > 1 Then
+                    model_constraint = model_constraint & "0="
                     For b = 1 To n_ind
                         int_num = int_num + 1
                         If b > 1 Then model_constraint = model_constraint & "+"
                         model_constraint = model_constraint & "N" & int_num
                     Next
+                    model_constraint = model_constraint & ";" & lb
                 End If
-                model_constraint = model_constraint & ";" & lb
             Next
         End If
     End If
@@ -630,7 +630,7 @@ lb = Chr(10)
                     If a <> c Then
                         n_ind_line = n_ind_line + 1
                     End If
-                    temp_ind = DataStructure.ScaleIndicator(c, b, True)
+                    temp_ind = format_mplus(DataStructure.ScaleIndicator(c, b, True))
                     If Len(temp_line) + Len(temp_ind) < 75 Then
                         If Len(temp_line) > 0 Then temp_line = temp_line & " "
                         temp_line = temp_line & temp_ind
@@ -676,8 +676,8 @@ lb = Chr(10)
         For a = 1 To DataStructure.ScaleInclude
             n_ind = n_ind + DataStructure.ScaleIndicator(a, 0, True)
         Next
-        ind_first = DataStructure.ScaleIndicator(1, 1, True)
-        ind_last = DataStructure.ScaleIndicator(DataStructure.ScaleInclude, DataStructure.ScaleIndicator(DataStructure.ScaleInclude, 0, True), True)
+        ind_first = format_mplus(DataStructure.ScaleIndicator(1, 1, True))
+        ind_last = format_mplus(DataStructure.ScaleIndicator(DataStructure.ScaleInclude, DataStructure.ScaleIndicator(DataStructure.ScaleInclude, 0, True), True))
         diag_n = ((n_ind * (n_ind - 1)) / 2)
         d = WorksheetFunction.Round(DataStructure.Cases_N / 5, 0)
         
@@ -687,7 +687,7 @@ lb = Chr(10)
         i_num = 1
         For a = 1 To DataStructure.ScaleInclude
             For b = 1 To DataStructure.ScaleIndicator(a, 0, True)
-                ind_name = DataStructure.ScaleIndicator(a, b, True)
+                ind_name = format_mplus(DataStructure.ScaleIndicator(a, b, True))
                 model_priors = model_priors & "T" & i_num & "~IW(0.5*" & WorksheetFunction.Round(DataStructure.Variance(ind_name), 3) & "*" & d & "," & d & ");" & lb
                 i_num = i_num + 1
             Next
@@ -706,7 +706,7 @@ lb = Chr(10)
         For a = 1 To DataStructure.ScaleInclude
             temp_line = DataStructure.ScaleName(a, True) & " = mean("
             For b = 1 To DataStructure.ScaleIndicator(a, 0, True)
-                temp_ind = DataStructure.ScaleIndicator(a, b, True)
+                temp_ind = format_mplus(DataStructure.ScaleIndicator(a, b, True))
                 If Len(temp_line) + Len(temp_ind) > 88 Then
                     model_define = model_define & temp_line & lb
                     temp_line = temp_ind

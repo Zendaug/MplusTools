@@ -19,22 +19,6 @@ Sub ResetDefaults()
     If IsEmpty(var_disp_mode) Then var_disp_mode = 1
 End Sub
 
-Sub folderpicker()
-    Dim sFolder As String
-    ' Open the select folder prompt
-    With Application.FileDialog(msoFileDialogFolderPicker)
-        If .Show = -1 Then ' if OK is pressed
-            sFolder = .SelectedItems(1)
-        End If
-    End With
-    
-    If sFolder <> "" Then ' if a file was chosen
-        ' *********************
-        ' put your code in here
-        ' *********************
-    End If
-End Sub
-
 Public Sub ExportModules()
 ' A sub that will export all of the modules for upload to Github
     Dim bExport As Boolean
