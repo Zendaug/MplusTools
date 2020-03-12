@@ -20,11 +20,40 @@ Private pScaleNames()
 Private pDataset(), pDatasetFiltered()
 Private filter
 Private miss_value
+Private temp_dataset
 Public n_variables, n_cases, start_row, end_row
 Public var_names, var_labels, scale_names
 
-Public Sub CreateDataStructure(Optional worksheet = "")
-    ' This procedure creates a data structure from the active worksheet
+Public Sub UpdateDataStructure(Optional wsheet = "")
+    ' This procedure loads the data structure from the active worksheet
+    
+' Count the number of cases
+    Debug.Print "Determining the number of cases"
+    For a = start_row To 1048576
+        If WorksheetFunction.Count(ActiveSheet.Rows(a)) = 0 Then
+            n_cases = a - start_row
+            Exit For
+        End If
+    Next
+
+    end_row = a - 1
+
+' Load the raw dataset
+    Debug.Print "Loading the raw dataset"
+    temp_dataset = Range(Cells(start_row, 1), Cells(end_row, n_variables)).Value
+    var_ctr = 0
+    
+' Change all of the errors to blanks
+    Debug.Print "Converting all of the errors to blanks"
+    For y = 1 To UBound(temp_dataset, 1)
+        For x = 1 To UBound(temp_dataset, 2)
+            If VarType(temp_dataset(y, x)) = vbError Then temp_dataset(y, x) = ""
+        Next
+    Next
+End Sub
+
+Public Sub CreateDataStructure(Optional wsheet = "")
+    'Thisprocedure
 
     Debug.Print "Creating Data Structure"
     
@@ -37,6 +66,7 @@ Public Sub CreateDataStructure(Optional worksheet = "")
     filter = False
     
 ' Count the number of n_variables
+    Debug.Print "Counting"
     For a = 1 To 10000
         temp_var = Cells(1, a).Value
         ' Quit if any of the variable names are numeric
@@ -51,12 +81,14 @@ Public Sub CreateDataStructure(Optional worksheet = "")
     Next
 
 ' Quit if there are 0 variables
+    Debug.Print "Quitting if there are no variables"
     If n_variables = 0 Then
         MsgBox "Error: No variable names were found in Row #1."
         End
     End If
 
 ' Check to see whether row 1 contains variable names
+    Debug.Print "Checking row 1 for variable names"
     If WorksheetFunction.Count(Range(Cells(1, 1), Cells(1, n_variables))) = 0 Then
         'InputForm.CheckBox2 = True
         var_names = True
@@ -64,6 +96,7 @@ Public Sub CreateDataStructure(Optional worksheet = "")
     End If
 
 ' Check to see whether row 2 contains item texts
+    Debug.Print "Checking row 2 for item texts"
     If WorksheetFunction.Count(Range(Cells(2, 1), Cells(2, n_variables))) = 0 Then
         var_labels = True
         'InputForm.CheckBox3 = True
@@ -71,6 +104,7 @@ Public Sub CreateDataStructure(Optional worksheet = "")
     End If
 
 ' Check to see whether row 3 contains item texts
+    Debug.Print "Checking row 3 for scale names"
     If WorksheetFunction.Count(Range(Cells(3, 1), Cells(3, n_variables))) = 0 Then
         'MsgBox WorksheetFunction.Count(Range(Cells(3, 1), Cells(3, n_variables)))
         'InputForm.ScaleNames = True
@@ -79,26 +113,8 @@ Public Sub CreateDataStructure(Optional worksheet = "")
         start_row = 5
     End If
 
-' Count the number of cases
-    For a = start_row To 1048576
-        If WorksheetFunction.Count(ActiveSheet.Rows(a)) = 0 Then
-            n_cases = a - start_row
-            Exit For
-        End If
-    Next
-
-    end_row = a - 1
-
-' Load the raw dataset
-    temp_dataset = Range(Cells(start_row, 1), Cells(end_row, n_variables)).Value
-    var_ctr = 0
-    
-' Change all of the errors to blanks
-    For y = 1 To UBound(temp_dataset, 1)
-        For x = 1 To UBound(temp_dataset, 2)
-            If VarType(temp_dataset(y, x)) = vbError Then temp_dataset(y, x) = ""
-        Next
-    Next
+    Call UpdateDataStructure(wsheet)
+    Debug.Print "Finished updating the dataset"
 
 ' Create filtered dataset and variable names
     For x = 1 To UBound(temp_dataset, 2)
@@ -129,6 +145,32 @@ Public Sub CreateDataStructure(Optional worksheet = "")
         End If
     Next
 End Sub
+
+Public Sub RefreshDatastructure(Optional wsheet = "")
+    Call UpdateDataStructure(wsheet)
+    Debug.Print "Finished updating the dataset"
+
+' Create filtered dataset and variable names
+    For x = 1 To UBound(temp_dataset, 2)
+        temp_cells = ARRAY_COLUMN(temp_dataset, x)
+        If WorksheetFunction.Count(temp_cells) > 1 Then ' Only enter the loop if the column contains numbers
+            If WorksheetFunction.StDev_S(temp_cells) > 0 Then ' Only enter the loop if the standard deviation is more than 0
+                
+                ' Add the variable information
+                var_ctr = var_ctr + 1
+      
+                ' Only keep the columns with associated variables (i.e., get rid of all of the non-numeric and 0 SD columns)
+                ReDim Preserve pDataset(1 To UBound(temp_dataset, 1), 1 To var_ctr)
+                For y = 1 To UBound(temp_dataset, 1)
+                    pDataset(y, var_ctr) = temp_dataset(y, x)
+                Next
+                n_variables = var_ctr
+            End If
+        End If
+    Next
+    filter = False
+End Sub
+ 
 
 Private Sub FilterData()
     ' This procedure filters the data, removing all of the non-blank and missing values. It does it the only the first time it is requested.
@@ -187,8 +229,8 @@ err1_end:
     
     ' Checking to see whether duplicate variable name exists
     For a = 1 To UBound(pVarNames, 2) - 1
-        If var_name = pVarNames(1, a) Then
-            MsgBox "Error - duplicate variable name found: " & var_name & ", positions " & a & " and " & UBound(pVarNames, 2) & ". Halting execution."
+        If var_name = pVarNames(1, a) Or format_mplus(var_name) = format_mplus(pVarNames(1, a)) Then
+            MsgBox "Error - duplicate variable name found: " & var_name & " (formatted as: '" & format_mplus(var_name) & "'), positions " & a & " and " & UBound(pVarNames, 2) & ". Halting execution."
             End
         End If
     Next

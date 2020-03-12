@@ -62,20 +62,20 @@ Sub Start_ObsMatrix()
     
     Unload Form_ObsMatrices
     
-    Call CreateCorrelationTable(MplusOutput, matrix1, matrix2, output_type, Means, SDs, False, head1, head2, note_text, sig, n_decimals, ICC1, ICC2)
+    Call CreateCorrelationTable(MplusOutput, matrix1, matrix2, output_type, Means, SDs, head1, head2, note_text, sig, n_decimals, ICC1, ICC2)
 End Sub
 
-Sub CreateCorrelationTable(MplusOutput, Optional below_matrix_num = 1, Optional above_matrix_num = 0, Optional output_type = "Correlation", Optional Means = True, Optional SDs = True, Optional no_label = False, Optional Heading1 = "", Optional Heading2 = "", Optional note_text = "", Optional sig = False, Optional ByVal decimals = 2, Optional ICC1 = False, Optional ICC2 = False)
+Sub CreateCorrelationTable(MplusOutput, Optional below_matrix_num = 1, Optional above_matrix_num = 0, Optional output_type = "Correlation", Optional Means = True, Optional SDs = True, Optional Heading1 = "", Optional Heading2 = "", Optional note_text = "", Optional sig = False, Optional ByVal decimals = 2, Optional ICC1 = False, Optional ICC2 = False)
     Dim x_start: x_start = ActiveCell.Column
     Dim y_start: y_start = ActiveCell.Row
     Dim y_offset: y_offset = 1
     Dim x_offset: x_offset = 1
     
-    If no_label = True Then
-        no_label = 0
-    Else
-        no_label = 1
-    End If
+'    If no_label = True Then
+'        no_label = 0
+'    Else
+'        no_label = 1
+'    End If
 
     ' Leave heading2 blank for now; insert it after resizing the row
     If Heading1 <> "" Then y_start = y_start + 1
@@ -83,7 +83,7 @@ Sub CreateCorrelationTable(MplusOutput, Optional below_matrix_num = 1, Optional 
         
     For y = 1 To MplusOutput.ObsVarNum()
         y_var = MplusOutput.ObsVarNum(y)
-        Cells(y_start + y, x_start) = y & ". " & MplusOutput.VarName(y_var, no_label)
+        Cells(y_start + y, x_start) = y & ". " & MplusOutput.VarName(y_var, var_disp_mode)
         With Cells(y_start, x_start + y)
             .Value = y
             .HorizontalAlignment = xlCenter

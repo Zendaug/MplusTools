@@ -136,10 +136,10 @@ Function ARRAY_RND(ByRef temp_array, target, ByRef temp_array2, wnum)
     
     n = rand_between(1, num_instances)
        
-    ctr = 0
+    Ctr = 0
     For a = 1 To UBound(temp_array, 1)
-        If temp_array(a) = target And temp_array2(a) <> wnum Then ctr = ctr + 1
-        If ctr = n Then
+        If temp_array(a) = target And temp_array2(a) <> wnum Then Ctr = Ctr + 1
+        If Ctr = n Then
             ARRAY_RND = a
             Exit Function
         End If
@@ -682,20 +682,20 @@ Function ARRAY_MULTIPLY(ByVal arr1, ByVal arr2, Optional formula = True)
 
     For x = 1 To a2_x_len ' Move across new array column
         For y = 1 To a1_y_len ' Move across new array rows
-            For c = 1 To a1_x_len ' Populate the cell
-                Debug.Print "X:"; x; "of"; a2_x_len; "Y:"; y; "of"; a1_y_len; "Cell entry: "; c; "of"; a1_x_len
+            For C = 1 To a1_x_len ' Populate the cell
+                Debug.Print "X:"; x; "of"; a2_x_len; "Y:"; y; "of"; a1_y_len; "Cell entry: "; C; "of"; a1_x_len
                 If formula = True Then
                     Debug.Print "Providing formula as output"
-                    If c = 1 Then new_array(y, x) = "SUM("
-                    new_array(y, x) = new_array(y, x) & CStr(array1(y, c)) & "*" & CStr(array2(c, x))
-                    If c < a1_x_len Then
+                    If C = 1 Then new_array(y, x) = "SUM("
+                    new_array(y, x) = new_array(y, x) & CStr(array1(y, C)) & "*" & CStr(array2(C, x))
+                    If C < a1_x_len Then
                         new_array(y, x) = new_array(y, x) & ","
                     Else
                         new_array(y, x) = new_array(y, x) & ")"
                     End If
                 Else
-                    If c = 1 Then new_array(y, x) = 0
-                    new_array(y, x) = new_array(y, x) + array1(y, c) * array2(c, x)
+                    If C = 1 Then new_array(y, x) = 0
+                    new_array(y, x) = new_array(y, x) + array1(y, C) * array2(C, x)
                 End If
             Next
         Next
@@ -830,27 +830,27 @@ Function UNIQUE(data_range, Optional unique_case = 0)
         temp_data = data_range
     End If
     
-    c = 0
+    C = 0
     
     If n_cols > 0 Then
         For a = 1 To n_rows
             For b = 1 To n_cols
                 If temp_data(a, b) <> "" Then
-                    If c > 0 Then
+                    If C > 0 Then
                         found_match = False
-                        For d = 1 To c
+                        For d = 1 To C
                             If temp_array(d) = temp_data(a, b) Then
                                 found_match = True
                                 Exit For
                             End If
                         Next
                         If found_match = False Then
-                            temp_array(c + 1) = temp_data(a, b)
-                            c = c + 1
+                            temp_array(C + 1) = temp_data(a, b)
+                            C = C + 1
                         End If
                     Else
                         temp_array(1) = temp_data(a, b)
-                        c = 1
+                        C = 1
                     End If
                 End If
             Next
@@ -858,28 +858,28 @@ Function UNIQUE(data_range, Optional unique_case = 0)
     Else
         For a = 1 To n_rows
             If temp_data(a) <> "" Then
-                If c > 0 Then
+                If C > 0 Then
                     found_match = False
-                    For d = 1 To c
+                    For d = 1 To C
                         If temp_array(d) = temp_data(a) Then
                             found_match = True
                             Exit For
                         End If
                     Next
                     If found_match = False Then
-                        temp_array(c + 1) = temp_data(a)
-                        c = c + 1
+                        temp_array(C + 1) = temp_data(a)
+                        C = C + 1
                     End If
                 Else
                     temp_array(1) = temp_data(a)
-                    c = 1
+                    C = 1
                 End If
             End If
         Next
     End If
     
     If unique_case = 0 Then
-        UNIQUE = c
+        UNIQUE = C
     Else
         UNIQUE = temp_array(unique_case)
     End If

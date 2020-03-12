@@ -16,16 +16,47 @@ Function format_mplus(ByVal orig_string)
         End If
         a = a + 1
     Loop
-
+    
+    ' Mode 1: Simply return the variable name without modification
     If Len(orig_string) <= 8 Then
         orig_string = Replace(orig_string, " ", "_")
         format_mplus = orig_string
         Exit Function
     End If
-
+    
     orig_string = auto_capital(orig_string)
     orig_string = Replace(orig_string, " ", "_")
     
+    ' Mode 2: If there 3 or more words, then create a shortened name based on all words
+    temp_array = Split(orig_string, "_")
+    If UBound(temp_array) >= 2 Then
+        Dim temp_array2()
+        ReDim temp_array2(LBound(temp_array) To UBound(temp_array))
+        cntr = 0
+        temp_array2 = ARRAY_POPULATE(temp_array2, "")
+        For a = 1 To 8
+            For b = LBound(temp_array) To UBound(temp_array)
+                temp = Mid(temp_array(b), a, 1)
+                If a = 1 Then
+                    temp = UCase(temp)
+                Else
+                    temp = LCase(temp)
+                End If
+                If cntr < 8 Then
+                    temp_array2(b) = temp_array2(b) & temp
+                    cntr = cntr + 1
+                End If
+            Next
+        Next
+        
+        format_mplus = ""
+        For a = LBound(temp_array2) To UBound(temp_array2)
+            format_mplus = format_mplus & temp_array2(a)
+        Next
+        Exit Function
+    End If
+    
+    ' Mode 3: Try to reduce the string
     ' Define a variable to count the length
     Dim len_cntr: len_cntr = 0
     Dim end_str
@@ -64,21 +95,10 @@ Function format_mplus(ByVal orig_string)
     ' Capitalise the first letter if it's not a capital. This is needed to parse the number of capitalised words.
     
     If Left(orig_string, 1) <> UCase(Left(orig_string, 1)) Then orig_string = UCase(Left(orig_string, 1)) & Right(orig_string, Len(orig_string) - 1)
-
-'    If item_id <> "" Then
-'        b = InStr(1, orig_string, item_id) - 1
-'        If b = 0 Then
-'            orig_string = Replace(orig_string, item_id, "")
-'            b = Len(orig_string)
-'        End If
-'    Else
-'        b = Len(orig_string)
-'    End If
-
         
-    For c = 1 To Len(orig_string) + 1
+    For C = 1 To Len(orig_string) + 1
         If Len(orig_string) > 2 Then
-            If Mid(orig_string, Len(orig_string) - c, 1) = "_" Then
+            If Mid(orig_string, Len(orig_string) - C, 1) = "_" Then
                 junk = junk + 1
             Else
                 Exit For
@@ -95,10 +115,6 @@ Function format_mplus(ByVal orig_string)
     'Debug.Print 3 & " " & num_wrds
     num_lpw = Int(num_lr / num_wrds)
     'Debug.Print 4
-
-    'Debug.Print "'" & word_num(orig_string, 1, end_str) & "'"
-
-    'Debug.Print "Number of words: " & num_wrds & "; Num letters remaining: " & num_lr & ", Num letters per word: " & num_lpw
 
     If num_wrds > num_lr Then
         ' If the number of words more than the remaining number of letters, just use the first letter from each word
@@ -423,7 +439,7 @@ Function CRONBACH_array(cellscopy, Optional format = True, Optional AboveDiag = 
     
     ' Get covariances / correlations
     Dim covars()
-    c = 1
+    C = 1
     
     ReDim covars(1 To (num_v ^ 2 - num_v) / 2)
     num_cv = UBound(covars)
@@ -431,13 +447,13 @@ Function CRONBACH_array(cellscopy, Optional format = True, Optional AboveDiag = 
         For b = 1 To a
             If AboveDiag = False Then
                 If a <> b Then
-                    covars(c) = cellscopy(a, b)
-                    c = c + 1
+                    covars(C) = cellscopy(a, b)
+                    C = C + 1
                 End If
             Else
                 If a <> b Then
-                    covars(c) = cellscopy(b, a)
-                    c = c + 1
+                    covars(C) = cellscopy(b, a)
+                    C = C + 1
                 End If
             End If
         Next
@@ -525,7 +541,7 @@ Function t_to_r(t, n)
     t_to_r = (Abs(t) / t) * Sqr((t ^ 2) / ((t ^ 2) + n - 2))
 End Function
 
-Function crit_val_asterisk(r, n)
+Function crit_val_asterisk(R, n)
     If n = 0 Then
         crit_val_asterisk = ""
         Exit Function
@@ -538,9 +554,9 @@ Function crit_val_asterisk(r, n)
     r01 = t_to_r(t01, n)
     r001 = t_to_r(t001, n)
 
-    If Abs(r) > r05 Then crit_val_asterisk = "*"
-    If Abs(r) > r01 Then crit_val_asterisk = "**"
-    If Abs(r) > r001 Then crit_val_asterisk = "***"
+    If Abs(R) > r05 Then crit_val_asterisk = "*"
+    If Abs(R) > r01 Then crit_val_asterisk = "**"
+    If Abs(R) > r001 Then crit_val_asterisk = "***"
 End Function
 
 Function IsArrayAllocated(arr As Variant) As Boolean
@@ -692,3 +708,4 @@ Sub dump_matrix()
         Next
     Next
 End Sub
+

@@ -1,4 +1,16 @@
 Attribute VB_Name = "GlobalVars"
+' Version 1.0.3:
+' Fixed a bug causing the Monte Carlo procedure to produce exactly the same dataset
+
+' Version 1.0.2:
+' Fixed the duplicates algorithm so that compares the two variable names that have been formatted to 8 characters or fewer using the "format_mplus" function
+' Modified the "format_mplus" algorithm for formatting the Mplus variable names.
+' Fixed a bug in the observed correlation tables that would not allow you to display variable names / labels.
+
+' Version 1.0.1:
+' Fixed bug in Fit Statistics tabular output where the DF and p were not displayed for the chi-square statistic
+' Fixed a bug in which MEANS/INTERCEPTS/THRESHOLDS were not properly loaded from the sample statistics for categorical variables
+
 ' Global variables
 
 Public MplusOutput, DataStructure
@@ -7,6 +19,7 @@ Public syntax_text
 Public use_formula
 Public n_decimals     ' Number of decimal places (1, 2, 3)
 Public var_disp_mode  ' 0: display variable name only, 1: display variable label, 2: display variable label and [name]
+
 
 Sub GotoSettings()
     Call ResetDefaults

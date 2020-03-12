@@ -292,172 +292,23 @@ Public Property Let ParseOutput(text As String)
     ReDim mod_matrix_lookup(1 To 3, 1 To nGroups * nLevels * nMixtures)
     For a = 1 To nGroups
         For b = 1 To nLevels
-            For c = 1 To nMixtures
+            For C = 1 To nMixtures
                 grp_name = ""
                 lev_name = ""
                 mix_name = ""
                 If grouplist.Count >= a Then grp_name = grouplist(a)
                 If levellist.Count >= b Then lev_name = levellist(b)
-                If mixturelist.Count >= c Then mix_name = mixturelist(c)
+                If mixturelist.Count >= C Then mix_name = mixturelist(C)
                 mod_matrix_list.Add SET_STRINGVECTOR(grp_name, lev_name, mix_name) ', std_name)
                 mod_matrix_lookup(1, mod_matrix_list.Count) = a ' Set it to the group
                 mod_matrix_lookup(2, mod_matrix_list.Count) = b ' Set it to the level
-                mod_matrix_lookup(3, mod_matrix_list.Count) = c ' Set it to the mixture
+                mod_matrix_lookup(3, mod_matrix_list.Count) = C ' Set it to the mixture
                 Debug.Print "Adding model matrix: " & mod_matrix_list(mod_matrix_list.Count)
             Next
         Next
     Next
     
-    ' Add sample statistics
-    ' Are there any sample statistics?
-    start_line = FindLine("SAMPLE STATISTICS")
-    
-    ' Check to see if it's an exact match
-    If line(start_line) <> "SAMPLE STATISTICS" Then start_line = 0
-    
-    If start_line = 0 Then start_line = FindLine("RESULTS FOR BASIC ANALYSIS")
-    
-    If start_line > 0 Then
-        Debug.Print "Found sample statistics (SAMPSTAT)"
-        IsSAMPSTAT = True
-        
-        ' Count the number of variables
-        start_line2 = FindLine("Covariances", start_line) + 3
-        If start_line2 = 3 Then start_line2 = FindLine("CORRELATION MATRIX", start_line) + 3
-        
-        var_cntr = 0
-        For a = start_line2 To Next_Blank_Line(start_line2) - 1
-            Debug.Print "Line ", a, "to line", Next_Blank_Line(start_line2) - 1
-            temp_var = VarNum(Word(a, 1))
-            Debug.Print temp_var & ": " & Word(a, 1)
-            'If temp_var > 0 Then VarList(temp_var, 21) = var_cntr + 1 ' Numbering the variable's position in the matrix. Deleted this.
-            var_cntr = var_cntr + 1
-        Next
-                
-        ' Resize the observed matrix array based on the number of variables and the number of groups
-        ReDim obs_matrix(1 To var_cntr, 1 To var_cntr, 1 To 2, 1 To nGroups, 1 To nLevels)
-        ReDim obs_vector(1 To var_cntr, 1 To nGroups, 1 To nLevels)
-        'MsgBox "Dimensions are " & var_cntr & " * " & var_cntr & " * " & nGroups & " groups * " & nLevels & " levels."
-        
-        ' Loop through each of the observed matrices and add them to the arrays
-        For a = 1 To obs_matrix_list.Count
-            temp_line = "SAMPLE STATISTICS"
-            If obs_matrix_list.Count > 1 Then temp_line = temp_line & " FOR " & obs_matrix_list(a)
-            start_line = FindLine(temp_line)
-            
-            ' Add Means
-            start_line2 = FindLine("Means", start_line, False)
-            
-            Do While Word(start_line2, 1) = "Means" Or Word(start_line2, 1) = "MEANS/INTERCEPTS/THRESHOLDS"
-                For b = 1 To Num_Words_on_Line(start_line2 + 1)
-                    Debug.Print "Adding means " & b & " of " & Num_Words_on_Line(start_line2 + 1)
-                    var_name = Word(start_line2 + 1, b)
-                    dol_sign = InStr(1, var_name, "$")
-                    category = 1
-                    If dol_sign > 0 Then
-                        category = CInt(Mid(var_name, dol_sign + 1, Len(var_name) - dol_sign))
-                        var_name = Left(var_name, dol_sign - 1)
-                    End If
-                    
-                    ' Check to see whether the variable is categorical
-                    If dol_sign > 0 Then
-                        obs_vector(VarNum(var_name), obs_Group(a), obs_Level(a)) = ADD_STRINGVECTOR(obs_vector(VarNum(Word(start_line2 + 1, b)), obs_Group(a), obs_Level(a)), Word(start_line2 + 3, b))
-                    Else
-                        obs_vector(VarNum(var_name), obs_Group(a), obs_Level(a)) = Word(start_line2 + 3, b)
-                    End If
-                Next
-                start_line2 = Next_NonBlank_Line(start_line2 + 4)
-            Loop
-            
-            ' Add Covariances/Variances
-            Debug.Print "Adding Covariances for: " & obs_matrix_list(a)
-            start_line2 = FindLine("Covariances", start_line)
-            
-            Do While Word(start_line2, 1) = "Covariances"
-                start_line3 = start_line2 + 2
-                For y = 1 To Num_NonBlankLines(start_line3 + 1)
-                    Debug.Print y; ": searching for Y variable"
-                    y_num = VarNum(Word(start_line3 + y, 1))
-                    If y_num = 0 Then MsgBox "Cannot find Y variable: " & Word(start_line3 + y, 1)
-                    temp_text = ""
-                    Debug.Print "Y number is: " & y_num
-                    If Num_Words_on_Line(start_line3 + y) > 1 Then
-                        For x = 2 To Num_Words_on_Line(start_line3 + y)
-                            x_num = VarNum(Word(start_line3 - 1, x - 1))
-                            Debug.Print "X number is: " & x_num
-                            If x_num = 0 Then MsgBox "Cannot find X variable: " & Word(start_line3 - 1, x)
-                            obs_matrix(y_num, x_num, 1, obs_Group(a), obs_Level(a)) = Word(start_line3 + y, x)
-                            obs_matrix(x_num, y_num, 1, obs_Group(a), obs_Level(a)) = obs_matrix(y_num, x_num, 1, obs_Group(a), obs_Level(a))
-                            temp_text = temp_text & " " & Word(start_line3 + y, x)
-                        Next
-                    End If
-                    end_line = start_line3 + y
-                    Debug.Print "Found line of covariances: " & temp_text
-                Next
-                start_line2 = Next_NonBlank_Line(end_line)
-            Loop
-            
-            ' Add Correlations
-            Debug.Print "Adding Correlations for: " & obs_matrix_list(a)
-            start_line2 = FindLine("Correlations", start_line)
-            If start_line2 = 0 Then start_line2 = FindLine("CORRELATION MATRIX", start_line)
-                        
-            Do While Word(start_line2, 1) = "Correlations" Or (Word(start_line2, 1) = "CORRELATION" And Word(start_line2, 2) = "MATRIX")
-                start_line3 = start_line2 + 2
-                For y = 1 To Num_NonBlankLines(start_line3 + 1)
-                    Debug.Print y; ": searching for Y variable"
-                    y_num = VarNum(Word(start_line3 + y, 1))
-                    If y_num = 0 Then MsgBox "Cannot find Y variable: " & Word(start_line3 + y, 1)
-                    temp_text = ""
-                    Debug.Print "Y number is: " & y_num
-                    If Num_Words_on_Line(start_line3 + y) > 1 Then
-                        For x = 2 To Num_Words_on_Line(start_line3 + y)
-                            x_num = VarNum(Word(start_line3 - 1, x - 1))
-                            'MsgBox "Y:" & Word(start_line3 + y, 1) & "(" & y_num & "), X:" & Word(start_line3 - 1, x - 1) & " (" & x_num & ")"
-                            Debug.Print "X number is: " & x_num
-                            If x_num = 0 Then MsgBox "Cannot find X variable: " & Word(start_line3 - 1, x)
-                            obs_matrix(y_num, x_num, 2, obs_Group(a), obs_Level(a)) = Word(start_line3 + y, x)
-                            obs_matrix(x_num, y_num, 2, obs_Group(a), obs_Level(a)) = obs_matrix(y_num, x_num, 2, obs_Group(a), obs_Level(a))
-                            temp_text = temp_text & " " & Word(start_line3 + y, x)
-                        Next
-                    End If
-                    end_line = start_line3 + y
-                    Debug.Print "Found line of correlations: " & temp_text
-                Next
-                start_line2 = Next_NonBlank_Line(end_line)
-            Loop
-            
-            ' Produce covariance table if categorical data has been requested
-            If FindLine("CORRELATION MATRIX (WITH VARIANCES ON THE DIAGONAL)", start_line) > 0 Then
-                ' Do the diagonal first
-                For y = LBound(obs_matrix, 1) To UBound(obs_matrix, 1)
-                    Debug.Print "Diagonal..."
-                    If VarList(y, 4) = 2 Or VarList(y, 4) = 3 Then
-                        Debug.Print "Categorical..."
-                        ' Set the variance to 1 for categorical variables
-                        obs_matrix(y, y, 1, obs_Group(a), obs_Level(a)) = 1
-                        obs_matrix(y, y, 2, obs_Group(a), obs_Level(a)) = 1
-                    Else
-                        Debug.Print "Non-categorical"
-                        ' Move variance to covariance table
-                        obs_matrix(y, y, 1, obs_Group(a), obs_Level(a)) = obs_matrix(y, y, 2, obs_Group(a), obs_Level(a))
-                        obs_matrix(y, y, 2, obs_Group(a), obs_Level(a)) = 1
-                    End If
-                Next
-                
-                ' Calculate the covariances
-                Debug.Print "Covariances"
-                For y = 2 To UBound(obs_matrix, 1)
-                    For x = 1 To y - 1
-                        Debug.Print y & " " & x & " 1 " & obs_Group(a) & " " & obs_Level(a)
-                        obs_matrix(y, x, 1, obs_Group(a), obs_Level(a)) = obs_matrix(y, x, 2, obs_Group(a), obs_Level(a)) * Sqr(obs_matrix(y, y, 1, obs_Group(a), obs_Level(a))) * Sqr(obs_matrix(x, x, 1, obs_Group(a), obs_Level(a)))
-                        obs_matrix(x, y, 1, obs_Group(a), obs_Level(a)) = obs_matrix(y, x, 1, obs_Group(a), obs_Level(a))
-                    Next
-                Next
-            End If
-            
-        Next
-    End If
+    AddSampstat
     
     ' Add covariance coverage
     start_line = FindLine("COVARIANCE COVERAGE OF DATA")
@@ -1110,9 +961,176 @@ Sub AnalysisInfo()
     Estimator = Word(FindLine("Estimator", temp_line), 2)
 End Sub
 
+Sub AddSampstat()
+    On Error GoTo error_message
+
+    ' Add sample statistics
+    ' Are there any sample statistics?
+    start_line = FindLine("SAMPLE STATISTICS")
+    
+    ' Check to see if it's an exact match
+    If line(start_line) <> "SAMPLE STATISTICS" Then start_line = 0
+    
+    If start_line = 0 Then start_line = FindLine("RESULTS FOR BASIC ANALYSIS")
+    
+    If start_line > 0 Then
+        Debug.Print "Found sample statistics (SAMPSTAT)"
+        IsSAMPSTAT = True
+        
+        ' Count the number of variables
+        start_line2 = FindLine("Covariances", start_line) + 3
+        If start_line2 = 3 Then start_line2 = FindLine("CORRELATION MATRIX", start_line) + 3
+        
+        var_cntr = 0
+        For a = start_line2 To Next_Blank_Line(start_line2) - 1
+            Debug.Print "Line ", a, "to line", Next_Blank_Line(start_line2) - 1
+            temp_var = VarNum(Word(a, 1))
+            Debug.Print temp_var & ": " & Word(a, 1)
+            'If temp_var > 0 Then VarList(temp_var, 21) = var_cntr + 1 ' Numbering the variable's position in the matrix. Deleted this.
+            var_cntr = var_cntr + 1
+        Next
+                
+        ' Resize the observed matrix array based on the number of variables and the number of groups
+        ReDim obs_matrix(1 To var_cntr, 1 To var_cntr, 1 To 2, 1 To nGroups, 1 To nLevels)
+        ReDim obs_vector(1 To var_cntr, 1 To nGroups, 1 To nLevels)
+        'MsgBox "Dimensions are " & var_cntr & " * " & var_cntr & " * " & nGroups & " groups * " & nLevels & " levels."
+        
+        ' Loop through each of the observed matrices and add them to the arrays
+        For a = 1 To obs_matrix_list.Count
+            temp_line = "SAMPLE STATISTICS"
+            If obs_matrix_list.Count > 1 Then temp_line = temp_line & " FOR " & obs_matrix_list(a)
+            start_line = FindLine(temp_line)
+            
+            ' Add Means
+            start_line2 = FindLine("Means", start_line, False)
+            
+            Do While Word(start_line2, 1) = "Means" Or Word(start_line2, 1) = "MEANS/INTERCEPTS/THRESHOLDS"
+                prev_var_name = ""
+                For b = 1 To Num_Words_on_Line(start_line2 + 1)
+                    var_name = Word(start_line2 + 1, b)
+                    Debug.Print "Adding means " & b & " of " & Num_Words_on_Line(start_line2 + 1) & " (" & var_name & ")"
+                    dol_sign = InStr(1, var_name, "$")
+                    category = False
+                    If dol_sign > 0 Then
+                        var_name = Left(var_name, dol_sign - 1)
+                        category = True
+                    End If
+                    If var_name = prev_var_name Then category = True
+                                        
+                    ' Check to see whether the variable is categorical
+                    If category = True Then
+                        obs_vector(VarNum(var_name), obs_Group(a), obs_Level(a)) = ADD_STRINGVECTOR(obs_vector(VarNum(Word(start_line2 + 1, b)), obs_Group(a), obs_Level(a)), Word(start_line2 + 3, b))
+                    Else
+                        obs_vector(VarNum(var_name), obs_Group(a), obs_Level(a)) = Word(start_line2 + 3, b)
+                    End If
+                Next
+                start_line2 = Next_NonBlank_Line(start_line2 + 4)
+            Loop
+            
+            ' Add Covariances/Variances
+            Debug.Print "Adding Covariances for: " & obs_matrix_list(a)
+            start_line2 = FindLine("Covariances", start_line)
+            
+            Do While Word(start_line2, 1) = "Covariances"
+                start_line3 = start_line2 + 2
+                For y = 1 To Num_NonBlankLines(start_line3 + 1)
+                    Debug.Print y; ": searching for Y variable"
+                    y_num = VarNum(Word(start_line3 + y, 1))
+                    If y_num = 0 Then MsgBox "Cannot find Y variable: " & Word(start_line3 + y, 1)
+                    temp_text = ""
+                    Debug.Print "Y number is: " & y_num
+                    If Num_Words_on_Line(start_line3 + y) > 1 Then
+                        For x = 2 To Num_Words_on_Line(start_line3 + y)
+                            x_num = VarNum(Word(start_line3 - 1, x - 1))
+                            Debug.Print "X number is: " & x_num
+                            If x_num = 0 Then MsgBox "Cannot find X variable: " & Word(start_line3 - 1, x)
+                            obs_matrix(y_num, x_num, 1, obs_Group(a), obs_Level(a)) = Word(start_line3 + y, x)
+                            obs_matrix(x_num, y_num, 1, obs_Group(a), obs_Level(a)) = obs_matrix(y_num, x_num, 1, obs_Group(a), obs_Level(a))
+                            temp_text = temp_text & " " & Word(start_line3 + y, x)
+                        Next
+                    End If
+                    end_line = start_line3 + y
+                    Debug.Print "Found line of covariances: " & temp_text
+                Next
+                start_line2 = Next_NonBlank_Line(end_line)
+            Loop
+            
+            ' Add Correlations
+            Debug.Print "Adding Correlations for: " & obs_matrix_list(a)
+            start_line2 = FindLine("Correlations", start_line)
+            If start_line2 = 0 Then start_line2 = FindLine("CORRELATION MATRIX", start_line)
+                        
+            Do While Word(start_line2, 1) = "Correlations" Or (Word(start_line2, 1) = "CORRELATION" And Word(start_line2, 2) = "MATRIX")
+                start_line3 = start_line2 + 2
+                For y = 1 To Num_NonBlankLines(start_line3 + 1)
+                    Debug.Print y; ": searching for Y variable"
+                    y_num = VarNum(Word(start_line3 + y, 1))
+                    If y_num = 0 Then MsgBox "Cannot find Y variable: " & Word(start_line3 + y, 1)
+                    temp_text = ""
+                    Debug.Print "Y number is: " & y_num
+                    If Num_Words_on_Line(start_line3 + y) > 1 Then
+                        For x = 2 To Num_Words_on_Line(start_line3 + y)
+                            x_num = VarNum(Word(start_line3 - 1, x - 1))
+                            'MsgBox "Y:" & Word(start_line3 + y, 1) & "(" & y_num & "), X:" & Word(start_line3 - 1, x - 1) & " (" & x_num & ")"
+                            Debug.Print "X number is: " & x_num
+                            If x_num = 0 Then MsgBox "Cannot find X variable: " & Word(start_line3 - 1, x)
+                            obs_matrix(y_num, x_num, 2, obs_Group(a), obs_Level(a)) = Word(start_line3 + y, x)
+                            obs_matrix(x_num, y_num, 2, obs_Group(a), obs_Level(a)) = obs_matrix(y_num, x_num, 2, obs_Group(a), obs_Level(a))
+                            temp_text = temp_text & " " & Word(start_line3 + y, x)
+                        Next
+                    End If
+                    end_line = start_line3 + y
+                    Debug.Print "Found line of correlations: " & temp_text
+                Next
+                start_line2 = Next_NonBlank_Line(end_line)
+            Loop
+            
+            ' Produce covariance table if categorical data has been requested
+            If FindLine("CORRELATION MATRIX (WITH VARIANCES ON THE DIAGONAL)", start_line) > 0 Then
+                ' Do the diagonal first
+                For y = LBound(obs_matrix, 1) To UBound(obs_matrix, 1)
+                    Debug.Print "Diagonal..."
+                    If VarList(y, 4) = 2 Or VarList(y, 4) = 3 Then
+                        Debug.Print "Categorical..."
+                        ' Set the variance to 1 for categorical variables
+                        obs_matrix(y, y, 1, obs_Group(a), obs_Level(a)) = 1
+                        obs_matrix(y, y, 2, obs_Group(a), obs_Level(a)) = 1
+                    Else
+                        Debug.Print "Non-categorical"
+                        ' Move variance to covariance table
+                        obs_matrix(y, y, 1, obs_Group(a), obs_Level(a)) = obs_matrix(y, y, 2, obs_Group(a), obs_Level(a))
+                        obs_matrix(y, y, 2, obs_Group(a), obs_Level(a)) = 1
+                    End If
+                Next
+                
+                ' Calculate the covariances
+                Debug.Print "Covariances"
+                For y = 2 To UBound(obs_matrix, 1)
+                    For x = 1 To y - 1
+                        Debug.Print y & " " & x & " 1 " & obs_Group(a) & " " & obs_Level(a)
+                        obs_matrix(y, x, 1, obs_Group(a), obs_Level(a)) = obs_matrix(y, x, 2, obs_Group(a), obs_Level(a)) * Sqr(obs_matrix(y, y, 1, obs_Group(a), obs_Level(a))) * Sqr(obs_matrix(x, x, 1, obs_Group(a), obs_Level(a)))
+                        obs_matrix(x, y, 1, obs_Group(a), obs_Level(a)) = obs_matrix(y, x, 1, obs_Group(a), obs_Level(a))
+                    Next
+                Next
+            End If
+            
+        Next
+    End If
+
+    On Error GoTo 0
+    Exit Sub
+    
+error_message:
+    MsgBox "Error parsing sample statistics."
+    End
+End Sub
+
+
 Sub AddModelResults()
     ' Add model results
     ' Check to see if a model exists...
+    On Error GoTo 0
+    
     start_line = FindLine("MODEL RESULTS")
     If start_line > 0 Then
         IsModel = True
@@ -1377,7 +1395,8 @@ Sub AddModelResults()
                 v_num1 = VarNum(Word(start_line2, 1))
                 For a = start_line2 + 1 To Next_Blank_Line(start_line2) - 1
                     v_num2 = VarNum(Word(a, 1))
-                    Debug.Print "Trying: "; v_num1; ":" & v_num2; ":"; std_num & ":" & model_num
+                    Debug.Print "Trying: " & v_num1 & ":" & v_num2; ":" & std_num & ":" & model_num
+                    Debug.Print "Trying: " & VarName(v_num1) & " : " & VarName(v_num2) & " : " & StdName(std_num) & " : "; ModelName(model_num)
                     If IsCInterval = True Then
                         mod_matrix_nondirectional(v_num1, v_num2, std_num, mod_Group(model_num), mod_Level(model_num), mod_Mixture(model_num)) = ADD_STRINGVECTOR(mod_matrix_nondirectional(v_num1, v_num2, std_num, mod_Group(model_num), mod_Level(model_num), mod_Mixture(model_num)), Word(a, 2), "CI005")
                         mod_matrix_nondirectional(v_num1, v_num2, std_num, mod_Group(model_num), mod_Level(model_num), mod_Mixture(model_num)) = ADD_STRINGVECTOR(mod_matrix_nondirectional(v_num1, v_num2, std_num, mod_Group(model_num), mod_Level(model_num), mod_Mixture(model_num)), Word(a, 3), "CI025")
@@ -1568,6 +1587,14 @@ Sub AddModelResults()
             End If
         Loop
     End If
+    
+    On Error GoTo 0
+    Exit Sub
+    
+error_message:
+    MsgBox "Error parsing model."
+    End
+    
 End Sub
 
 Sub FindComposites()
@@ -2101,9 +2128,9 @@ Public Property Get ModelNum(Optional group_num = 1, Optional level_num = 1, Opt
     temp_count = 0
     For a = 1 To nGroups
         For b = 1 To nLevels
-            For c = 1 To nMixtures
+            For C = 1 To nMixtures
                 temp_count = temp_count + 1
-                If group_num = a And level_num = b And mixture_num = c Then
+                If group_num = a And level_num = b And mixture_num = C Then
                     ModelNum = temp_count
                 End If
             Next
@@ -3043,7 +3070,7 @@ Public Property Get Alpha(fac_num, Optional std_num = 1, Optional model_num = 1,
     
     ' Get covariances / correlations
     Dim covars()
-    c = 1
+    C = 1
     
     ReDim covars(1 To (num_v ^ 2 - num_v) / 2)
     num_cv = UBound(covars)
@@ -3052,8 +3079,8 @@ Public Property Get Alpha(fac_num, Optional std_num = 1, Optional model_num = 1,
             ind1 = FactorIndicator(fac_num, a, std_num, model_num, True)
             ind2 = FactorIndicator(fac_num, b, std_num, model_num, True)
             If a <> b Then
-                covars(c) = Sample_Covariance(ind1, ind2, matrix_num)
-                c = c + 1
+                covars(C) = Sample_Covariance(ind1, ind2, matrix_num)
+                C = C + 1
             End If
         Next
     Next
@@ -3451,8 +3478,8 @@ End Property
 Public Property Get Composite_P(y, x, Optional model_num = 1, Optional tails = 2)
     Debug.Print "Finding Composite p"
     n = Composite_N(y, x, 2, model_num)
-    r = Composite_Correlation(y, x, 2, model_num, False)
-    t = Abs(r_to_t(r, n))
+    R = Composite_Correlation(y, x, 2, model_num, False)
+    t = Abs(r_to_t(R, n))
     Composite_P = WorksheetFunction.TDist(t, n - 2, tails)
 End Property
 

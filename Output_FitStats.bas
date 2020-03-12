@@ -191,7 +191,7 @@ Sub WriteModelFit(MplusOutput, _
             Cells(start_y + offset_y, start_x + offset_x) = MplusOutput.ChiSq
             Cells(start_y + offset_y, start_x + offset_x + 1) = MplusOutput.DF
             Cells(start_y + offset_y, start_x + offset_x + 2) = format(MplusOutput.ChiSqP, ".000")
-            offset_x = offset_x + 1
+            offset_x = offset_x + 3
         End If
         If CFI = True And MplusOutput.CFI <> Empty Then
             If heading = True Then Cells(start_y, start_x + offset_x) = "CFI"

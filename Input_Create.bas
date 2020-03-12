@@ -81,7 +81,7 @@ Sub CreateDataFile(data_object, ByVal data_filename, Optional export_to = "Mplus
     ' If nreps > 1 then it generates a Monte Carlo dataset
 
     Dim file_path: file_path = ActiveWorkbook.Path
-    If file_path = "" Then file_path = MyDocsPath()
+    If file_path = "" Or Left(file_path, 4) = "http" Then file_path = MyDocsPath()
     
     If nreps > 1 Then ' Set up Monte Carlo file
         Open file_path & "\" & data_filename For Output As 1
@@ -96,6 +96,7 @@ Sub CreateDataFile(data_object, ByVal data_filename, Optional export_to = "Mplus
             Open file_path & "\" & STEM_FILE(data_filename) & a & ".csv" For Output As 1
             ActiveSheet.EnableCalculation = False
             ActiveSheet.EnableCalculation = True
+            data_object.RefreshDatastructure
         Else
             Open file_path & "\" & STEM_FILE(data_filename) & ".csv" For Output As 1
         End If
@@ -112,20 +113,20 @@ Sub CreateDataFile(data_object, ByVal data_filename, Optional export_to = "Mplus
         
         temp = ""
         For b = 1 To data_object.Cases_N
-            For c = 1 To data_object.Variables_N
-                temp_val = data_object.Dataset(b, c)
+            For C = 1 To data_object.Variables_N
+                temp_val = data_object.Dataset(b, C)
                 If temp_val = data_object.MissingValue And export_to = "R" Then
                     ' If there is missing data and you are exporting to R, then write NA instead
                     temp = temp & "NA"
                 Else
                     temp = temp & temp_val
                 End If
-                If c < data_object.Variables_N Then temp = temp & ","
+                If C < data_object.Variables_N Then temp = temp & ","
             Next
             Print #1, temp
             temp = ""
         Next
-    Close #1
+        Close #1
     Next
     
 End Sub
@@ -161,7 +162,7 @@ Sub CreateInputSyntax(data_object, _
     
     ' Locate the file path; if this fails, save to "My Documents"
     Dim file_path: file_path = ActiveWorkbook.Path
-    If file_path = "" Then file_path = MyDocsPath()
+    If file_path = "" Or Left(file_path, 4) = "http" Then file_path = MyDocsPath()
 
     Dim y2: y2 = 0
     lb = Chr(10)
@@ -619,25 +620,25 @@ lb = Chr(10)
     If InputForm_CFA.BCFA_CL = True Then
         n_ind = 0
         For a = 1 To DataStructure.ScaleInclude
-            For c = 1 To DataStructure.ScaleInclude
-                If c = 1 Then
+            For C = 1 To DataStructure.ScaleInclude
+                If C = 1 Then
                     temp_line = DataStructure.ScaleName(a, True) & " BY"
                 Else
                     temp_line = ""
                 End If
                 n_ind_line = 0
-                For b = 1 To DataStructure.ScaleIndicator(c, 0, True)
-                    If a <> c Then
+                For b = 1 To DataStructure.ScaleIndicator(C, 0, True)
+                    If a <> C Then
                         n_ind_line = n_ind_line + 1
                     End If
-                    temp_ind = format_mplus(DataStructure.ScaleIndicator(c, b, True))
+                    temp_ind = format_mplus(DataStructure.ScaleIndicator(C, b, True))
                     If Len(temp_line) + Len(temp_ind) < 75 Then
                         If Len(temp_line) > 0 Then temp_line = temp_line & " "
                         temp_line = temp_line & temp_ind
-                        If a <> c And b = 1 Then temp_line = temp_line & "*"
-                        If a = c And c > 1 And b = 1 Then temp_line = temp_line & "@1"
+                        If a <> C And b = 1 Then temp_line = temp_line & "*"
+                        If a = C And C > 1 And b = 1 Then temp_line = temp_line & "@1"
                     Else
-                        If a <> c Then
+                        If a <> C Then
                             temp_line = temp_line & " (L" & n_ind + 1
                             If n_ind_line > 1 Then
                                 temp_line = temp_line & "-L" & n_ind + n_ind_line - 1
@@ -654,7 +655,7 @@ lb = Chr(10)
                 
                 model_syntax = model_syntax & temp_line
                 
-                If a <> c Then
+                If a <> C Then
                     model_syntax = model_syntax & " (L" & n_ind + 1
                     If n_ind_line > 1 Then
                         model_syntax = model_syntax & "-L" & n_ind + n_ind_line
@@ -662,7 +663,7 @@ lb = Chr(10)
                     model_syntax = model_syntax & ")"
                     n_ind = n_ind + n_ind_line
                 End If
-                If c = DataStructure.ScaleInclude Then model_syntax = model_syntax & ";"
+                If C = DataStructure.ScaleInclude Then model_syntax = model_syntax & ";"
                 model_syntax = model_syntax & lb
             Next
             model_syntax = model_syntax & lb

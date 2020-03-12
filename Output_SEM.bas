@@ -623,7 +623,7 @@ Sub CreateSEMTable(MplusOutput, Optional ModelNum = 1, Optional group_output = 0
                 y_offset2 = y_offset
                 'Cells(y_start + y_offset, x_start + x_offset - 1).Value = "Start from here..."
                 Debug.Print "Row headings:"; COUNT_STRINGVECTOR(row_headings(y, 1, 1, 1))
-                For S = 1 To COUNT_STRINGVECTOR(row_headings(y, 1, 1, 1))
+                For s = 1 To COUNT_STRINGVECTOR(row_headings(y, 1, 1, 1))
                     For w = 1 To nadr
                         If nadr > 1 And w = 1 Then y_offset2 = y_offset2 + 1
                         For v = 1 To nadc
@@ -633,8 +633,8 @@ Sub CreateSEMTable(MplusOutput, Optional ModelNum = 1, Optional group_output = 0
                             ri_num = ri_grid(y, x, w, v)
                             dv_num = GET_STRINGVECTOR(col_headings(y, x, w, v), t)
                             If dv_num = "" Or dv_num = "NA" Then dv_num = GET_STRINGVECTOR(col_headings(1, x, 1, 1), t)
-                            iv_num = GET_STRINGVECTOR(row_headings(y, x, w, v), S)
-                            If iv_num = "" Or iv_num = "NA" Then iv_num = GET_STRINGVECTOR(row_headings(y, 1, 1, 1), S)
+                            iv_num = GET_STRINGVECTOR(row_headings(y, x, w, v), s)
+                            If iv_num = "" Or iv_num = "NA" Then iv_num = GET_STRINGVECTOR(row_headings(y, 1, 1, 1), s)
                             If ci_num = 1 And ri_num = 1 Then ' Add estimate
                                 temp_text = "="
                                 If iv_num = 0 Then
